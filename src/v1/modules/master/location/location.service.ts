@@ -49,8 +49,9 @@ async function getSingleLocationById(id: number) {
   });
 
   const children = buildTree(allLocations, location.id);
+  const path = buildPath(allLocations, location.id);
 
-  return { location, children };
+  return { location, children, path };
 }
 
 async function createLocation(data: { name: string; parentId?: number | null }) {

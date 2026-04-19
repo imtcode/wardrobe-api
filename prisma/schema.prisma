@@ -67,6 +67,7 @@ model Location {
   updatedAt DateTime @updatedAt
 
   children Location[] @relation("LocationTree")
+  items    Item[]
 }
 
 model Category {
@@ -79,5 +80,70 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  children Category[] @relation("CategoryTree")
+  children Category[]      @relation("CategoryTree")
+  items    Item[]
+  fields   CategoryField[]
+}
+
+enum Condition {
+  NEW
+  GOOD
+  FAIR
+  POOR
+}
+
+enum FieldType {
+  TEXT
+  NUMBER
+  DATE
+  SELECT
+}
+
+model Item {
+  id         Int        @id @default(autoincrement())
+  name       String
+  brand      String?
+  color      String?
+  condition  Condition?
+  categoryId Int?
+  locationId Int?
+  images     Json?
+
+  category Category? @relation(fields: [categoryId], references: [id])
+  location Location? @relation(fields: [locationId], references: [id])
+
+  fieldValues ItemFieldValue[]
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CategoryField {
+  id         Int       @id @default(autoincrement())
+  categoryId Int
+  name       String
+  fieldType  FieldType
+  options    Json? // string[]
+  isRequired Boolean   @default(false)
+
+  category Category         @relation(fields: [categoryId], references: [id])
+  values   ItemFieldValue[]
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ItemFieldValue {
+  id      Int    @id @default(autoincrement())
+  itemId  Int
+  fieldId Int
+  value   String
+
+  item  Item          @relation(fields: [itemId], references: [id])
+  field CategoryField @relation(fields: [fieldId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
