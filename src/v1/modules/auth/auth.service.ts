@@ -67,6 +67,7 @@ async function createSession(userId: number, ipAddress?: string, userAgent?: str
       userAgent,
       expiresAt,
     },
+    include: { user: true },
   });
 
   return session;
@@ -75,6 +76,7 @@ async function createSession(userId: number, ipAddress?: string, userAgent?: str
 async function logout(token: string) {
   const session = await prisma.session.findFirst({
     where: { token, isActive: true },
+    include: { user: true },
   });
 
   if (!session) throw new AppError("Session not found", statusCodes.UNAUTHORIZED);
@@ -83,6 +85,8 @@ async function logout(token: string) {
     where: { id: session.id },
     data: { isActive: false },
   });
+
+  return session;
 }
 
 export const authService = {

@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { categoryFieldService } from "./category-field.service";
 import sendResponse from "@/src/lib/sendResponse";
 import { statusCodes } from "@/src/constants/statusCodes";
-import { FieldType } from "@/generated/prisma/client";
+import { EntityType, FieldType, LogType } from "@/generated/prisma/client";
+import createLog from "@/src/lib/createLog";
 
 async function getAllCategoryFields(req: Request, res: Response, next: NextFunction) {
   try {
@@ -33,7 +34,17 @@ async function getSingleCategoryField(req: Request, res: Response, next: NextFun
 
 async function createCategoryField(req: Request, res: Response, next: NextFunction) {
   try {
+    const { id: userId } = req.user;
     const field = await categoryFieldService.createCategoryField(req.body);
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.CATEGORY,
+      entityId: field.id,
+      userId,
+      message: `Created Category Field ${field.name} for category ${field.category.name}`,
+    });
+
     return sendResponse({
       res,
       status: true,
@@ -49,7 +60,15 @@ async function createCategoryField(req: Request, res: Response, next: NextFuncti
 async function updateCategoryField(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    const { id: userId } = req.user;
     const field = await categoryFieldService.updateCategoryField(Number(id), req.body);
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.CATEGORY,
+      entityId: field.id,
+      userId,
+      message: `Updated Category Field ${field.name} for category ${field.category.name}`,
+    });
     return sendResponse({ res, status: true, message: "Category field updated successfully", data: field });
   } catch (err) {
     next(err);
@@ -59,7 +78,18 @@ async function updateCategoryField(req: Request, res: Response, next: NextFuncti
 async function deleteCategoryField(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    await categoryFieldService.deleteCategoryField(Number(id));
+    const { id: userId } = req.user;
+
+    const field = await categoryFieldService.deleteCategoryField(Number(id));
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.CATEGORY,
+      entityId: Number(id),
+      userId,
+      message: `Deleted Category Field ${field.name} for category ${field.category.name}`,
+    });
+
     return sendResponse({ res, status: true, message: "Category field deleted successfully" });
   } catch (err) {
     next(err);

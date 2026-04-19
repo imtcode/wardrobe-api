@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from "express";
-import { authService } from "./auth.service.js";
-import sendResponse from "@/src/lib/sendResponse.js";
-import { statusCodes } from "@/src/constants/statusCodes.js";
+import { authService } from "./auth.service";
+import sendResponse from "@/src/lib/sendResponse";
+import { statusCodes } from "@/src/constants/statusCodes";
+import createLog from "@/src/lib/createLog";
+import { EntityType, LogType } from "@/generated/prisma/client";
 
 async function login(req: Request, res: Response, next: NextFunction) {
   try {
@@ -12,6 +14,14 @@ async function login(req: Request, res: Response, next: NextFunction) {
     console.log("TODO: SEND OTP ", { otp });
 
     // TODO: send otp here
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.USER,
+      entityId: user.id,
+      userId: user.id,
+      message: `Login initiated for ${user.name}`,
+    });
 
     return sendResponse({
       res,
@@ -31,6 +41,14 @@ async function verifyOtp(req: Request, res: Response, next: NextFunction) {
 
     const session = await authService.createSession(userId, req.ip, req.headers["user-agent"]);
 
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.USER,
+      entityId: session.userId,
+      userId: session.userId,
+      message: `User ${session.user.name} logged in`,
+    });
+
     return sendResponse({
       res,
       status: true,
@@ -47,7 +65,15 @@ async function logout(req: Request, res: Response, next: NextFunction) {
     const token = req.headers["authorization"];
     if (!token) throw new Error("No token provided");
 
-    await authService.logout(token);
+    const session = await authService.logout(token);
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.USER,
+      entityId: session.userId,
+      userId: session.userId,
+      message: `User ${session.user.name} logged out`,
+    });
 
     return sendResponse({
       res,

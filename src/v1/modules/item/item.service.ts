@@ -138,7 +138,7 @@ async function updateItem(
 async function deleteItem(id: number) {
   await getSingleItemById(id);
 
-  await prisma.item.update({
+  return await prisma.item.update({
     where: { id },
     data: { isActive: false },
   });

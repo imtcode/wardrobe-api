@@ -2,7 +2,9 @@ import { Request, Response, NextFunction } from "express";
 import { userService } from "./user.service";
 import sendResponse from "@/src/lib/sendResponse";
 import { statusCodes } from "@/src/constants/statusCodes";
-import { Role } from "@/generated/prisma/client";
+import { EntityType, Role } from "@/generated/prisma/client";
+import createLog from "@/src/lib/createLog";
+import { LogType } from "@/generated/prisma/client";
 
 async function getAllUsers(req: Request, res: Response, next: NextFunction) {
   try {
@@ -35,7 +37,17 @@ async function getSingleUser(req: Request, res: Response, next: NextFunction) {
 
 async function createUser(req: Request, res: Response, next: NextFunction) {
   try {
+    const { id: userId } = req.user;
     const user = await userService.createUser(req.body);
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.USER,
+      entityId: user.id,
+      userId,
+      message: `Created User ${user.name} with role ${user.role}`,
+    });
+
     return sendResponse({
       res,
       status: true,
@@ -51,7 +63,16 @@ async function createUser(req: Request, res: Response, next: NextFunction) {
 async function updateUser(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    const { id: userId } = req.user;
     const user = await userService.updateUser(Number(id), req.body);
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.USER,
+      entityId: user.id,
+      userId,
+      message: `Updated User ${user.name}`,
+    });
     return sendResponse({ res, status: true, message: "User updated successfully", data: user });
   } catch (err) {
     next(err);
@@ -61,7 +82,17 @@ async function updateUser(req: Request, res: Response, next: NextFunction) {
 async function deleteUser(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    await userService.deleteUser(Number(id));
+    const { id: userId } = req.user;
+    const user = await userService.deleteUser(Number(id));
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.USER,
+      entityId: Number(id),
+      userId,
+      message: `Deleted User ${user.name}`,
+    });
+
     return sendResponse({ res, status: true, message: "User deleted successfully" });
   } catch (err) {
     next(err);

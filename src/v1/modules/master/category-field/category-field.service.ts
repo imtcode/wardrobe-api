@@ -4,14 +4,7 @@ import { statusCodes } from "@/src/constants/statusCodes";
 import { FieldType } from "@/generated/prisma/client";
 import paginate from "@/src/lib/paginate";
 
-async function getAllCategoryFields(filters: {
-  categoryId?: number;
-  fieldType?: FieldType;
-  page?: number;
-  limit?: number;
-  orderBy?: "asc" | "desc";
-  orderByField?: "createdAt" | "name";
-}) {
+async function getAllCategoryFields(filters: { categoryId?: number; fieldType?: FieldType; page?: number; limit?: number; orderBy?: "asc" | "desc"; orderByField?: "createdAt" | "name" }) {
   const { categoryId, fieldType, page = 1, limit = 10, orderBy = "desc", orderByField = "createdAt" } = filters;
 
   const where = {
@@ -46,20 +39,14 @@ async function getSingleCategoryFieldById(id: number) {
   return field;
 }
 
-async function createCategoryField(data: {
-  categoryId: number;
-  name: string;
-  fieldType: FieldType;
-  options?: string[];
-  isRequired: boolean;
-}) {
+async function createCategoryField(data: { categoryId: number; name: string; fieldType: FieldType; options?: string[]; isRequired: boolean }) {
   const category = await prisma.category.findUnique({
     where: { id: data.categoryId, isActive: true },
   });
 
   if (!category) throw new AppError("Category not found", statusCodes.NOT_FOUND);
 
-  return await prisma.categoryField.create({ data });
+  return await prisma.categoryField.create({ data, include: { category: true } });
 }
 
 async function updateCategoryField(
@@ -76,13 +63,15 @@ async function updateCategoryField(
   return await prisma.categoryField.update({
     where: { id },
     data,
+    include: { category: true },
   });
 }
 
 async function deleteCategoryField(id: number) {
   await getSingleCategoryFieldById(id);
 
-  await prisma.categoryField.update({
+  return await prisma.categoryField.update({
+    include: { category: true },
     where: { id },
     data: { isActive: false },
   });

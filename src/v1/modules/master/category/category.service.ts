@@ -109,7 +109,7 @@ async function deleteCategory(id: number) {
 
   // Check if in use with any items, if yes, do not delete
 
-  await prisma.category.update({
+  return await prisma.category.update({
     where: { id },
     data: { isActive: false },
   });

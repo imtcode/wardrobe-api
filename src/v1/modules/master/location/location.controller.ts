@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { locationService } from "./location.service";
 import sendResponse from "@/src/lib/sendResponse";
 import { statusCodes } from "@/src/constants/statusCodes";
+import createLog from "@/src/lib/createLog";
+import { EntityType, LogType } from "@/generated/prisma/client";
 
 async function getAllLocations(req: Request, res: Response, next: NextFunction) {
   try {
@@ -25,7 +27,18 @@ async function getSingleLocation(req: Request, res: Response, next: NextFunction
 
 async function createLocation(req: Request, res: Response, next: NextFunction) {
   try {
+    const { id: userId } = req.user;
+
     const location = await locationService.createLocation(req.body);
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.LOCATION,
+      entityId: location.id,
+      userId,
+      message: `Created Location ${location.name}`,
+    });
+
     return sendResponse({ res, status: true, message: "Location created successfully", data: location, statusCode: statusCodes.CREATED });
   } catch (err) {
     next(err);
@@ -35,7 +48,17 @@ async function createLocation(req: Request, res: Response, next: NextFunction) {
 async function updateLocation(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    const { id: userId } = req.user;
+
     const location = await locationService.updateLocation(Number(id), req.body);
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.LOCATION,
+      entityId: Number(id),
+      userId,
+      message: `Updated Location ${location.name}`,
+    });
+
     return sendResponse({ res, status: true, message: "Location updated successfully", data: location });
   } catch (err) {
     next(err);
@@ -45,7 +68,15 @@ async function updateLocation(req: Request, res: Response, next: NextFunction) {
 async function deleteLocation(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    await locationService.deleteLocation(Number(id));
+    const { id: userId } = req.user;
+    const location = await locationService.deleteLocation(Number(id));
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.LOCATION,
+      entityId: Number(id),
+      userId,
+      message: `Deleted Location ${location.name}`,
+    });
     return sendResponse({ res, status: true, message: "Location deleted successfully" });
   } catch (err) {
     next(err);

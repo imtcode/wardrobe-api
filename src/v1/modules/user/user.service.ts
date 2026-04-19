@@ -6,14 +6,7 @@ import paginate from "@/src/lib/paginate";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 
-async function getAllUsers(filters: {
-  search?: string;
-  role?: Role;
-  page?: number;
-  limit?: number;
-  orderBy?: "asc" | "desc";
-  orderByField?: "createdAt" | "name";
-}) {
+async function getAllUsers(filters: { search?: string; role?: Role; page?: number; limit?: number; orderBy?: "asc" | "desc"; orderByField?: "createdAt" | "name" }) {
   const { search, role, page = 1, limit = 10, orderBy = "desc", orderByField = "createdAt" } = filters;
 
   const where = {
@@ -124,7 +117,7 @@ async function deleteUser(id: number) {
     data: { isActive: false },
   });
 
-  await prisma.user.update({
+  return await prisma.user.update({
     where: { id },
     data: { isActive: false },
   });

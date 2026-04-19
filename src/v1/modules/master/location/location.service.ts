@@ -110,7 +110,7 @@ async function deleteLocation(id: number) {
 
   // Check if in use with any items, if yes, do not delete
 
-  await prisma.location.update({
+  return await prisma.location.update({
     where: { id },
     data: { isActive: false },
   });

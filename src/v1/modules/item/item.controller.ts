@@ -2,7 +2,8 @@ import { Request, Response, NextFunction } from "express";
 import { itemService } from "./item.service";
 import sendResponse from "@/src/lib/sendResponse";
 import { statusCodes } from "@/src/constants/statusCodes";
-import { Condition } from "@/generated/prisma/client";
+import { Condition, EntityType, LogType } from "@/generated/prisma/client";
+import createLog from "@/src/lib/createLog";
 
 async function getAllItems(req: Request, res: Response, next: NextFunction) {
   try {
@@ -38,7 +39,17 @@ async function getSingleItem(req: Request, res: Response, next: NextFunction) {
 
 async function createItem(req: Request, res: Response, next: NextFunction) {
   try {
+    const { id: userId } = req.user;
+
     const item = await itemService.createItem(req.body);
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.ITEM,
+      entityId: item.id,
+      userId,
+      message: `Created Item ${item.name}`,
+    });
+
     return sendResponse({ res, status: true, message: "Item created successfully", data: item, statusCode: statusCodes.CREATED });
   } catch (err) {
     next(err);
@@ -48,7 +59,17 @@ async function createItem(req: Request, res: Response, next: NextFunction) {
 async function updateItem(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
+    const { id: userId } = req.user;
+
     const item = await itemService.updateItem(Number(id), req.body);
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.ITEM,
+      entityId: item.id,
+      userId,
+      message: `Updated Item ${item.name}`,
+    });
     return sendResponse({ res, status: true, message: "Item updated successfully", data: item });
   } catch (err) {
     next(err);
@@ -58,7 +79,18 @@ async function updateItem(req: Request, res: Response, next: NextFunction) {
 async function deleteItem(req: Request, res: Response, next: NextFunction) {
   try {
     const { id } = req.params;
-    await itemService.deleteItem(Number(id));
+    const { id: userId } = req.user;
+
+    const item = await itemService.deleteItem(Number(id));
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.ITEM,
+      entityId: Number(id),
+      userId,
+      message: `Deleted Item ${item.name}`,
+    });
+
     return sendResponse({ res, status: true, message: "Item deleted successfully" });
   } catch (err) {
     next(err);
