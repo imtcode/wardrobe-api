@@ -53,3 +53,9 @@ export const updateItemSchema = z.object({
     .optional()
     .nullable(),
 });
+
+// Other validation
+
+export const moveItemSchema = z.object({
+  locationId: z.number({ error: "Location ID is required" }),
+});

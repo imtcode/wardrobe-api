@@ -97,10 +97,36 @@ async function deleteItem(req: Request, res: Response, next: NextFunction) {
   }
 }
 
+// Other controllers
+async function moveItem(req: Request, res: Response, next: NextFunction) {
+  try {
+    const { id } = req.params;
+    const { id: userId } = req.user;
+    const { locationId } = req.body;
+
+    const { updatedItem, oldLocation, newLocation } = await itemService.moveItem(Number(id), locationId);
+
+    await createLog({
+      type: LogType.SYSTEM,
+      entityType: EntityType.ITEM,
+      entityId: updatedItem.id,
+      userId: req.user.id,
+      message: `Item "${updatedItem.name}" moved from "${oldLocation?.name ?? "Unknown"}" to "${newLocation.name}"`,
+    });
+
+    return sendResponse({ res, status: true, message: "Item moved successfully", data: updatedItem });
+  } catch (err) {
+    next(err);
+  }
+}
+
 export const itemController = {
   getAllItems,
   getSingleItem,
   createItem,
   updateItem,
   deleteItem,
+
+  // Other controllers
+  moveItem,
 };

@@ -144,10 +144,38 @@ async function deleteItem(id: number) {
   });
 }
 
+// Other Services
+async function moveItem(id: number, locationId: number) {
+  const item = await getSingleItemById(id);
+
+  if (item.locationId === locationId) {
+    throw new AppError("Item is already in this location", statusCodes.BAD_REQUEST);
+  }
+
+  const newLocation = await prisma.location.findUnique({
+    where: { id: locationId, isActive: true },
+  });
+
+  if (!newLocation) throw new AppError("Location not found", statusCodes.NOT_FOUND);
+
+  const oldLocation = item.locationId ? await prisma.location.findUnique({ where: { id: item.locationId, isActive: true } }) : null;
+
+  const updatedItem = await prisma.item.update({
+    where: { id },
+    data: { locationId },
+    include: { category: true, location: true },
+  });
+
+  return { updatedItem, oldLocation, newLocation };
+}
+
 export const itemService = {
   getAllItems,
   getSingleItemById,
   createItem,
   updateItem,
   deleteItem,
+
+  // Other Services
+  moveItem,
 };
