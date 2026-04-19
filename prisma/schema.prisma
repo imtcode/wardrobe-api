@@ -55,3 +55,16 @@ model OtpCode {
   isUsed    Boolean  @default(false)
   createdAt DateTime @default(now())
 }
+
+model Location {
+  id       Int       @id @default(autoincrement())
+  name     String
+  parentId Int?
+  parent   Location? @relation("LocationTree", fields: [parentId], references: [id])
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  children Location[] @relation("LocationTree")
+}
